@@ -15,6 +15,24 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
     @Published var message = ""
     private var authSession: ASWebAuthenticationSession?
 
+    func loadAccount() {
+        guard let id = connectionId else { return }
+        message = "Loading..."
+        Task {
+            do {
+                var req = URLRequest(url: URL(string: "https://fansonly-proxy.omishkdr.workers.dev/access/self")!)
+                req.setValue(id, forHTTPHeaderField: "x-connection-id")
+                let (data, _) = try await URLSession.shared.data(for: req)
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                let name = json?["name"] as? String ?? "?"
+                let username = json?["username"] as? String ?? "?"
+                await MainActor.run { self.message = "Hello \(name) (@\(username))" }
+            } catch {
+                await MainActor.run { self.message = "Error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
         return scenes.flatMap { $0.windows }.first(where: { $0.isKeyWindow }) ?? ASPresentationAnchor()
@@ -82,6 +100,8 @@ struct ContentView: View {
             } else {
                 Text("Account connected")
                     .foregroundColor(.green)
+                Button("Load my account") { model.loadAccount() }
+                    .buttonStyle(.bordered)
             }
             Text(model.message)
                 .font(.footnote)
