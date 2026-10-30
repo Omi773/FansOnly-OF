@@ -20,7 +20,7 @@ struct CreatorView: View {
                     .font(.title)
                     .bold()
 
-                Text("@\\(sub.username)")
+                Text("@" + sub.username)
                     .foregroundColor(.secondary)
 
                 Text(sub.isActive ? "Subscription active" : "Subscription expired")
