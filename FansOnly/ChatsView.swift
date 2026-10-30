@@ -6,7 +6,7 @@ struct ChatsView: View {
     @State private var status = "Loading chats..."
 
     func name(for id: Int) -> String {
-        subs.first(where: { $0.id == id })?.name ?? "User \\(id)"
+        subs.first(where: { $0.id == id })?.name ?? ("User " + String(id))
     }
 
     func avatar(for id: Int) -> some View {
@@ -36,7 +36,7 @@ struct ChatsView: View {
                         }
                         Spacer()
                         if (chat.unreadMessagesCount ?? 0) > 0 {
-                            Text("\\(chat.unreadMessagesCount ?? 0)")
+                            Text(String(chat.unreadMessagesCount ?? 0))
                                 .font(.caption)
                                 .padding(6)
                                 .background(Color.blue)
@@ -139,10 +139,10 @@ struct ChatView: View {
 
     func load(older: Bool) async {
         do {
-            var path = "/access/chats/\\(userId)/messages?limit=10"
+            var path = "/access/chats/" + String(userId) + "/messages?limit=10"
             if older, let c = cursor,
                let enc = c.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-                path += "&cursor=\\(enc)"
+                path += "&cursor=" + enc
             }
             let data = try await API.request(path)
             let decoded = try JSONDecoder().decode(ChatMessagesResponse.self, from: data)
@@ -162,7 +162,7 @@ struct ChatView: View {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty { return }
         do {
-            _ = try await API.request("/access/chats/\\(userId)/messages", method: "POST", body: ["text": text])
+            _ = try await API.request("/access/chats/" + String(userId) + "/messages", method: "POST", body: ["text": text])
             draft = ""
             await load(older: false)
         } catch {
