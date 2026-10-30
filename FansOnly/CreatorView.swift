@@ -63,7 +63,7 @@ struct CreatorView: View {
     func loadPosts() async {
         do {
             let user = sub.username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? sub.username
-            let data = try await API.request("/access/users/\\(user)/posts?limit=20")
+            let data = try await API.request("/access/users/" + user + "/posts?limit=20")
             let decoded = try JSONDecoder().decode(PostsResponse.self, from: data)
             posts = decoded.list
             status = decoded.list.isEmpty ? "No posts found" : ""
