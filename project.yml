@@ -1,0 +1,24 @@
+name: FansOnly
+options:
+  bundleIdPrefix: com.l0owm
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  FansOnly:
+    type: application
+    platform: iOS
+    sources:
+      - FansOnly
+    info:
+      path: FansOnly/Info.plist
+      properties:
+        CFBundleDisplayName: FansOnly
+        UILaunchScreen: {}
+        CFBundleURLTypes:
+          - CFBundleURLName: fansonly
+            CFBundleURLSchemes:
+              - fansonly
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.l0owm.wvja
+        CODE_SIGNING_ALLOWED: "NO"
