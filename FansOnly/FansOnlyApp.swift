@@ -45,9 +45,9 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                 let (data, _) = try await URLSession.shared.data(for: req)
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 let name = json?["name"] as? String ?? "?"
-                await MainActor.run { self.message = "Hello \(name)" }
+                await MainActor.run { self.message = "Hello \\(name)" }
             } catch {
-                await MainActor.run { self.message = "Error: \(error.localizedDescription)" }
+                await MainActor.run { self.message = "Error: \\(error.localizedDescription)" }
             }
         }
     }
@@ -63,7 +63,7 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                 let code = (response as? HTTPURLResponse)?.statusCode ?? 0
                 if code != 200 {
                     let text = String(data: data, encoding: .utf8) ?? ""
-                    await MainActor.run { self.message = "Error \(code): \(text.prefix(150))" }
+                    await MainActor.run { self.message = "Error \\(code): \\(text.prefix(150))" }
                     return
                 }
                 let decoded = try JSONDecoder().decode(SubscriptionsResponse.self, from: data)
@@ -72,7 +72,7 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                     self.message = decoded.list.isEmpty ? "No subscriptions found" : ""
                 }
             } catch {
-                await MainActor.run { self.message = "Error: \(error.localizedDescription)" }
+                await MainActor.run { self.message = "Error: \\(error.localizedDescription)" }
             }
         }
     }
@@ -98,7 +98,7 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                 }
                 await MainActor.run { self.start(url) }
             } catch {
-                await MainActor.run { self.message = "Error: \(error.localizedDescription)" }
+                await MainActor.run { self.message = "Error: \\(error.localizedDescription)" }
             }
         }
     }
@@ -123,7 +123,7 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                     self.message = ""
                     self.loadSubscriptions()
                 } else {
-                    self.message = "Login not completed (\(status ?? "unknown"))"
+                    self.message = "Login not completed (\\(status ?? "unknown"))"
                 }
             }
         }
@@ -137,58 +137,96 @@ struct ContentView: View {
     @StateObject private var model = LoginModel()
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 12) {
+        if model.connectionId == nil {
+            VStack(spacing: 16) {
                 Text("FansOnly")
                     .font(.largeTitle)
                     .bold()
-
-                if model.connectionId == nil {
-                    Button("Connect account") { model.connect() }
-                        .buttonStyle(.borderedProminent)
-                } else {
-                    HStack {
-                        Button("Load my account") { model.loadAccount() }
-                        Button("Subscriptions") { model.loadSubscriptions() }
-                        Button("Log out") { model.disconnect() }
-                    }
-                    .buttonStyle(.bordered)
-                    .font(.footnote)
-
-                    List(model.subs) { sub in
-                        NavigationLink {
-                            CreatorView(sub: sub)
-                        } label: {
-                            HStack(spacing: 12) {
-                                AsyncImage(url: URL(string: sub.avatar ?? "")) { image in
-                                    image.resizable().scaledToFill()
-                                } placeholder: {
-                                    Circle().fill(Color.gray.opacity(0.3))
-                                }
-                                .frame(width: 44, height: 44)
-                                .clipShape(Circle())
-
-                                VStack(alignment: .leading) {
-                                    Text(sub.name).bold()
-                                    Text("@\(sub.username)")
-                                        .font(.footnote)
-                                        .foregroundColor(.secondary)
-                                }
-                                Spacer()
-                                Text(sub.isActive ? "Active" : "Expired")
-                                    .font(.caption)
-                                    .foregroundColor(sub.isActive ? .green : .secondary)
-                            }
-                        }
-                    }
-                    .listStyle(.plain)
-                }
-
+                Button("Connect account") { model.connect() }
+                    .buttonStyle(.borderedProminent)
                 Text(model.message)
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
             .padding()
+        } else {
+            TabView {
+                FeedView(subs: model.subs)
+                    .tabItem { Label("Feed", systemImage: "house") }
+                SubscriptionsView(model: model)
+                    .tabItem { Label("Subscriptions", systemImage: "person.2") }
+                ChatsView(subs: model.subs)
+                    .tabItem { Label("Chats", systemImage: "message") }
+                AccountView(model: model)
+                    .tabItem { Label("Account", systemImage: "gearshape") }
+            }
+            .onAppear {
+                if model.subs.isEmpty { model.loadSubscriptions() }
+            }
+        }
+    }
+}
+
+struct SubscriptionsView: View {
+    @ObservedObject var model: LoginModel
+
+    var body: some View {
+        NavigationStack {
+            List(model.subs) { sub in
+                NavigationLink {
+                    CreatorView(sub: sub)
+                } label: {
+                    HStack(spacing: 12) {
+                        AsyncImage(url: URL(string: sub.avatar ?? "")) { image in
+                            image.resizable().scaledToFill()
+                        } placeholder: {
+                            Circle().fill(Color.gray.opacity(0.3))
+                        }
+                        .frame(width: 44, height: 44)
+                        .clipShape(Circle())
+
+                        VStack(alignment: .leading) {
+                            Text(sub.name).bold()
+                            Text("@\\(sub.username)")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Text(sub.isActive ? "Active" : "Expired")
+                            .font(.caption)
+                            .foregroundColor(sub.isActive ? .green : .secondary)
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .overlay {
+                if model.subs.isEmpty && !model.message.isEmpty {
+                    Text(model.message).foregroundColor(.secondary)
+                }
+            }
+            .navigationTitle("Subscriptions")
+            .refreshable { model.loadSubscriptions() }
+        }
+    }
+}
+
+struct AccountView: View {
+    @ObservedObject var model: LoginModel
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                Button("Load my account") { model.loadAccount() }
+                    .buttonStyle(.bordered)
+                Text(model.message)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                Button("Log out", role: .destructive) { model.disconnect() }
+                    .buttonStyle(.bordered)
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Account")
         }
     }
 }
