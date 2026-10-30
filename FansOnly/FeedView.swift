@@ -46,7 +46,7 @@ struct FeedView: View {
                 group.addTask {
                     do {
                         let user = sub.username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? sub.username
-                        let data = try await API.request("/access/users/\\(user)/posts?limit=5")
+                        let data = try await API.request("/access/users/" + user + "/posts?limit=5")
                         let decoded = try JSONDecoder().decode(PostsResponse.self, from: data)
                         return decoded.list.map { FeedItem(id: $0.id, sub: sub, post: $0) }
                     } catch {
