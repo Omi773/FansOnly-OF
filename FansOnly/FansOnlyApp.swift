@@ -189,7 +189,6 @@ struct ContentView: View {
                     .foregroundColor(.secondary)
             }
             .padding()
-            .navigationTitle("FansOnly")
         }
     }
 }
