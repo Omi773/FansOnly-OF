@@ -123,7 +123,7 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                     self.message = ""
                     self.loadSubscriptions()
                 } else {
-                    self.message = "Login not completed (\\(status ?? "unknown"))"
+                    self.message = "Login not completed (\(status ?? "unknown"))"
                 }
             }
         }
