@@ -3,6 +3,9 @@ name: Build FansOnly
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
@@ -33,7 +36,19 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/FansOnly.app Payload/
           zip -r FansOnly-unsigned.ipa Payload
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: FansOnly-unsigned-ipa
-          path: FansOnly-unsigned.ipa
+      - name: Publish alpha release
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          LAST=$(gh release list --limit 200 --json tagName -q '.[].tagName' \
+            | { grep -E '^v0\.1\.[0-9]+-alpha$' || true; } \
+            | sed -E 's/^v0\.1\.([0-9]+)-alpha$/\1/' \
+            | sort -n | tail -1)
+          if [ -z "$LAST" ]; then N=0; else N=$((LAST+1)); fi
+          VERSION="0.1.$N"
+          cp FansOnly-unsigned.ipa "FansOnly-$VERSION-alpha.ipa"
+          gh release create "v$VERSION-alpha" "FansOnly-$VERSION-alpha.ipa" \
+            --title "Build $VERSION Alpha" \
+            --notes "Alpha build $VERSION (unsigned .ipa, sign it in Feather)" \
+            --prerelease \
+            --target "\${{ github.sha }}"
