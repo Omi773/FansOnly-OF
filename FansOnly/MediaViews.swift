@@ -4,23 +4,72 @@ import AVKit
 struct InlinePlayer: View {
     let url: URL
     @State private var player: AVPlayer?
+    @State private var problem = ""
 
     var body: some View {
         VideoPlayer(player: player)
             .frame(height: 260)
+            .overlay(alignment: .bottom) {
+                if !problem.isEmpty {
+                    Text(problem + " | " + url.absoluteString)
+                        .font(.caption2)
+                        .foregroundColor(.white)
+                        .lineLimit(4)
+                        .padding(6)
+                        .background(Color.black.opacity(0.7))
+                }
+            }
             .onAppear {
                 try? AVAudioSession.sharedInstance().setCategory(.playback)
                 let p = AVPlayer(url: url)
                 player = p
                 p.play()
+                Task {
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    if let item = p.currentItem, item.status == .failed {
+                        problem = item.error?.localizedDescription ?? "Video failed to load"
+                    }
+                }
             }
             .onDisappear { player?.pause() }
+    }
+}
+
+struct PhotoViewer: View {
+    let url: URL?
+    @Binding var isShown: Bool
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable().scaledToFit()
+                case .failure:
+                    Text("Can't load image").foregroundColor(.white)
+                default:
+                    ProgressView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Button {
+                isShown = false
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(.white)
+                    .padding()
+            }
+        }
     }
 }
 
 struct MediaView: View {
     let item: PostMedia
     @State private var playing = false
+    @State private var showFull = false
 
     var body: some View {
         if playing, let url = item.videoURL {
@@ -77,9 +126,16 @@ struct MediaView: View {
             }
         }
         .onTapGesture {
-            if item.isVideo && item.videoURL != nil {
-                playing = true
+            if item.isVideo {
+                if item.videoURL != nil {
+                    playing = true
+                }
+            } else if item.imageURL != nil {
+                showFull = true
             }
+        }
+        .fullScreenCover(isPresented: $showFull) {
+            PhotoViewer(url: item.imageURL, isShown: $showFull)
         }
     }
 }
