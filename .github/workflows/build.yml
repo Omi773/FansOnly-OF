@@ -38,7 +38,7 @@ jobs:
 
       - name: Publish alpha release
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           LAST=$(gh release list --limit 200 --json tagName -q '.[].tagName' \
             | { grep -E '^v0\.1\.[0-9]+-alpha$' || true; } \
@@ -51,4 +51,4 @@ jobs:
             --title "Build $VERSION Alpha" \
             --notes "Alpha build $VERSION (unsigned .ipa, sign it in Feather)" \
             --prerelease \
-            --target "\${{ github.sha }}"
+            --target "${{ github.sha }}"
