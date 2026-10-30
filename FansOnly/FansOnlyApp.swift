@@ -137,52 +137,59 @@ struct ContentView: View {
     @StateObject private var model = LoginModel()
 
     var body: some View {
-        VStack(spacing: 12) {
-            Text("FansOnly")
-                .font(.largeTitle)
-                .bold()
+        NavigationStack {
+            VStack(spacing: 12) {
+                Text("FansOnly")
+                    .font(.largeTitle)
+                    .bold()
 
-            if model.connectionId == nil {
-                Button("Connect account") { model.connect() }
-                    .buttonStyle(.borderedProminent)
-            } else {
-                HStack {
-                    Button("Load my account") { model.loadAccount() }
-                    Button("Subscriptions") { model.loadSubscriptions() }
-                    Button("Log out") { model.disconnect() }
-                }
-                .buttonStyle(.bordered)
-                .font(.footnote)
-
-                List(model.subs) { sub in
-                    HStack(spacing: 12) {
-                        AsyncImage(url: URL(string: sub.avatar ?? "")) { image in
-                            image.resizable().scaledToFill()
-                        } placeholder: {
-                            Circle().fill(Color.gray.opacity(0.3))
-                        }
-                        .frame(width: 44, height: 44)
-                        .clipShape(Circle())
-
-                        VStack(alignment: .leading) {
-                            Text(sub.name).bold()
-                            Text("@\(sub.username)")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                        Text(sub.isActive ? "Active" : "Expired")
-                            .font(.caption)
-                            .foregroundColor(sub.isActive ? .green : .secondary)
+                if model.connectionId == nil {
+                    Button("Connect account") { model.connect() }
+                        .buttonStyle(.borderedProminent)
+                } else {
+                    HStack {
+                        Button("Load my account") { model.loadAccount() }
+                        Button("Subscriptions") { model.loadSubscriptions() }
+                        Button("Log out") { model.disconnect() }
                     }
-                }
-                .listStyle(.plain)
-            }
+                    .buttonStyle(.bordered)
+                    .font(.footnote)
 
-            Text(model.message)
-                .font(.footnote)
-                .foregroundColor(.secondary)
+                    List(model.subs) { sub in
+                        NavigationLink {
+                            CreatorView(sub: sub)
+                        } label: {
+                            HStack(spacing: 12) {
+                                AsyncImage(url: URL(string: sub.avatar ?? "")) { image in
+                                    image.resizable().scaledToFill()
+                                } placeholder: {
+                                    Circle().fill(Color.gray.opacity(0.3))
+                                }
+                                .frame(width: 44, height: 44)
+                                .clipShape(Circle())
+
+                                VStack(alignment: .leading) {
+                                    Text(sub.name).bold()
+                                    Text("@\(sub.username)")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Text(sub.isActive ? "Active" : "Expired")
+                                    .font(.caption)
+                                    .foregroundColor(sub.isActive ? .green : .secondary)
+                            }
+                        }
+                    }
+                    .listStyle(.plain)
+                }
+
+                Text(model.message)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .navigationTitle("FansOnly")
         }
-        .padding()
     }
 }
