@@ -102,7 +102,7 @@ struct PostCard: View {
 
                     VStack(alignment: .leading) {
                         Text(a.name).bold().font(.subheadline)
-                        Text("@\\(a.username)")
+                        Text("@" + a.username)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -121,7 +121,9 @@ struct PostCard: View {
                 MediaView(item: item)
             }
 
-            Text("♥ \\(post.favoritesCount ?? 0)   •   \\(post.mediaCount ?? 0) media")
+            let likes = String(post.favoritesCount ?? 0)
+            let mediaTotal = String(post.mediaCount ?? 0)
+            Text("♥ " + likes + "   •   " + mediaTotal + " media")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
