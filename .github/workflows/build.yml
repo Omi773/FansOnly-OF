@@ -11,6 +11,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -46,9 +48,24 @@ jobs:
             | sort -n | tail -1)
           if [ -z "$LAST" ]; then N=0; else N=$((LAST+1)); fi
           VERSION="0.1.$N"
+
+          RANGE="HEAD"
+          if [ -n "$LAST" ] && git rev-parse "v0.1.$LAST-alpha" >/dev/null 2>&1; then
+            RANGE="v0.1.$LAST-alpha..HEAD"
+          fi
+          CHANGES=$(git log $RANGE --no-merges --pretty='- %s (%h)')
+          if [ -z "$CHANGES" ]; then CHANGES="- No new commits since the last build"; fi
+
+          {
+            echo "Alpha build $VERSION (unsigned .ipa, sign it in Feather)"
+            echo
+            echo "### Changelog"
+            echo "$CHANGES"
+          } > notes.md
+
           cp FansOnly-unsigned.ipa "FansOnly-$VERSION-alpha.ipa"
           gh release create "v$VERSION-alpha" "FansOnly-$VERSION-alpha.ipa" \
             --title "Build $VERSION Alpha" \
-            --notes "Alpha build $VERSION (unsigned .ipa, sign it in Feather)" \
+            --notes-file notes.md \
             --prerelease \
             --target "${{ github.sha }}"
