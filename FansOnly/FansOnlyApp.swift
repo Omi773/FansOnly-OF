@@ -45,9 +45,9 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                 let (data, _) = try await URLSession.shared.data(for: req)
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 let name = json?["name"] as? String ?? "?"
-                await MainActor.run { self.message = "Hello \\(name)" }
+                await MainActor.run { self.message = "Hello " + name }
             } catch {
-                await MainActor.run { self.message = "Error: \\(error.localizedDescription)" }
+                await MainActor.run { self.message = "Error: " + error.localizedDescription }
             }
         }
     }
@@ -63,7 +63,7 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                 let code = (response as? HTTPURLResponse)?.statusCode ?? 0
                 if code != 200 {
                     let text = String(data: data, encoding: .utf8) ?? ""
-                    await MainActor.run { self.message = "Error \\(code): \\(text.prefix(150))" }
+                    await MainActor.run { self.message = "Error " + String(code) + ": " + String(text.prefix(150)) }
                     return
                 }
                 let decoded = try JSONDecoder().decode(SubscriptionsResponse.self, from: data)
@@ -72,7 +72,7 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                     self.message = decoded.list.isEmpty ? "No subscriptions found" : ""
                 }
             } catch {
-                await MainActor.run { self.message = "Error: \\(error.localizedDescription)" }
+                await MainActor.run { self.message = "Error: " + error.localizedDescription }
             }
         }
     }
@@ -98,7 +98,7 @@ class LoginModel: NSObject, ObservableObject, ASWebAuthenticationPresentationCon
                 }
                 await MainActor.run { self.start(url) }
             } catch {
-                await MainActor.run { self.message = "Error: \\(error.localizedDescription)" }
+                await MainActor.run { self.message = "Error: " + error.localizedDescription }
             }
         }
     }
@@ -187,7 +187,7 @@ struct SubscriptionsView: View {
 
                         VStack(alignment: .leading) {
                             Text(sub.name).bold()
-                            Text("@\\(sub.username)")
+                            Text("@" + sub.username)
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                         }
